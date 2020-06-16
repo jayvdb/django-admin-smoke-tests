@@ -82,7 +82,7 @@ class AdminSiteSmokeTestMixin(object):
         super(AdminSiteSmokeTestMixin, self).setUp()
 
         self.superuser = auth.get_user_model().objects.create_superuser(
-            'testuser', 'testuser@example.com', 'foo')
+            'testuser@example.com', 'foo')
 
         self.factory = RequestFactory()
 
