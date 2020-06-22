@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.test.client import RequestFactory
 
 import six
-from model_mommy import mommy
+from model_bakery import baker as mommy
 
 
 class ModelAdminCheckException(Exception):
