@@ -167,7 +167,7 @@ class AdminSiteSmokeTestMixin(object):
         form_field_names = frozenset(getattr(model_admin.form,
             'base_fields', []))
 
-        model_instance = model()
+        model_instance = mommy.make(model)
 
         for attr in attr_set:
             # for now we'll just check attributes, not strings
@@ -299,10 +299,22 @@ class AdminSiteSmokeTestMixin(object):
         if model._meta.proxy:
             return
         pk = item.pk
+        print(item)
+        if item.__class__.__name__ == 'WebhookEventTrigger':
+            print(item.headers)
+
         request = self.post_request()
         try:
             response = model_admin.change_view(request, object_id=str(pk))
+            print(response)
+            if item.__class__.__name__ == 'WebhookEventTrigger':
+                items = item.__class__.objects.all()
+                print(items)
+                for item in items:
+                    print(item.headers)
+                    print(item.event)
             if isinstance(response, django.template.response.TemplateResponse):
+                print(response.template_name)
                 response.render()
             self.assertIn(response.status_code, [200, 302])
 
