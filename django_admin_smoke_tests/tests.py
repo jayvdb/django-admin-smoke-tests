@@ -1,4 +1,5 @@
 import sys
+import unittest
 
 import django
 
@@ -29,6 +30,8 @@ def for_all_model_admins(fn):
                 continue
             try:
                 fn(self, model, model_admin)
+            except unittest.SkipTest:
+                continue
             except Exception as e:
                 if six.PY2:
                     # Approximate Py3's `raise ModelAdminCheckException from e`
@@ -246,19 +249,23 @@ class AdminSiteSmokeTestMixin(object):
     def test_changelist_view_search(self, model, model_admin):
         request = self.get_request(params=QueryDict('q=test'))
 
+        if not model_admin.has_add_permission(request):
+            raise unittest.SkipTest('No permission')
+
         # make sure no errors happen here
         try:
             response = model_admin.changelist_view(request)
             response.render()
             self.assertIn(response.status_code, [200, 302])
-        except PermissionDenied:
-            # this error is commonly raised by ModelAdmins that don't allow
-            # changelist view.
-            pass
+        except Exception:
+            raise
 
     @for_all_model_admins
     def test_add_view(self, model, model_admin):
         request = self.get_request()
+
+        if not model_admin.has_add_permission(request):
+            raise unittest.SkipTest('No permission')
 
         # make sure no errors happen here
         try:
@@ -266,10 +273,8 @@ class AdminSiteSmokeTestMixin(object):
             if isinstance(response, django.template.response.TemplateResponse):
                 response.render()
             self.assertIn(response.status_code, [200, 302])
-        except PermissionDenied:
-            # this error is commonly raised by ModelAdmins that don't allow
-            # adding.
-            pass
+        except Exception:
+            raise
 
     @for_all_model_admins
     def test_change_view(self, model, model_admin):
@@ -304,6 +309,9 @@ class AdminSiteSmokeTestMixin(object):
             print(item.headers)
 
         request = self.post_request()
+        if not model_admin.has_change_permission(request, item):
+            raise unittest.SkipTest('No permission')
+
         try:
             response = model_admin.change_view(request, object_id=str(pk))
             print(response)
@@ -320,7 +328,7 @@ class AdminSiteSmokeTestMixin(object):
 
         except ValidationError as e:
             # This the form was sent, but did not pass it's validation
-            print("Validation error in model %s, skipping smoke test: change view with data:" % model)
+            print("Validation error in model %s, skipping smoke test: change view with pk(%s) data:" % (model, pk))
             print("\t%s" % str(e).replace("\n", "\n\t"))
 
 
